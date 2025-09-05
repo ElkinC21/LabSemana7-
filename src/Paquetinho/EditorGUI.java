@@ -7,6 +7,7 @@ import static java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -52,11 +53,21 @@ public class EditorGUI extends BaseFrame {
 
         btnColor = crearBoton("Color", 400, 10, 80, 30);
         btnColor.addActionListener(e -> {
-            java.awt.Color c = JColorChooser.showDialog(this, "Elegir color", textPane.getForeground());
-            if (c != null) {
-                aplicarColor(c);
-            }
+            JColorChooser chooser = new JColorChooser(textPane.getForeground());
+            chooser.setPreviewPanel(new JPanel());
+
+            JDialog dialog = JColorChooser.createDialog(this, "Elegir color", true, chooser,
+                    actionEvent -> {
+                        Color c = chooser.getColor();
+                        if (c != null) {
+                            aplicarColor(c);
+                        }
+                    },
+                    null
+            );
+            dialog.setVisible(true);
         });
+
         panelNorte.add(btnColor);
 
         // Tamaño
