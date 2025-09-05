@@ -1,8 +1,11 @@
 package Paquetinho;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import static java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment;
+import javax.swing.JButton;
+import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -21,6 +24,7 @@ public class EditorGUI extends BaseFrame {
 
     private JComboBox<String> fontBox;
     private JComboBox<String> tamBox;
+    private JButton btnColor;
 
     private JTextPane textPane;
     private StyledDocument doc;
@@ -41,17 +45,26 @@ public class EditorGUI extends BaseFrame {
 
         // Fuente
         fontBox = crearCboFuentes();
-        
+
         JLabel lblFuente = crearLabel("Fuente:", 10, 15, 60, 25, java.awt.Font.PLAIN, 14f);
         panelNorte.add(lblFuente);
         panelNorte.add(fontBox);
 
+        btnColor = crearBoton("Color", 400, 10, 80, 30);
+        btnColor.addActionListener(e -> {
+            java.awt.Color c = JColorChooser.showDialog(this, "Elegir color", textPane.getForeground());
+            if (c != null) {
+                aplicarColor(c);
+            }
+        });
+        panelNorte.add(btnColor);
+
         // Tamaño
         tamBox = crearCboTamanios();
-        
+
         JLabel lblTam = crearLabel("Tamaño:", 265, 15, 60, 25, java.awt.Font.PLAIN, 14f);
         panelNorte.add(lblTam);
-        
+
         tamBox.setBounds(325, 10, 50, 30);
         panelNorte.add(tamBox);
 
@@ -114,5 +127,11 @@ public class EditorGUI extends BaseFrame {
 
     public static void main(String[] args) {
         new EditorGUI().setVisible(true);
+    }
+
+    private void aplicarColor(Color c) {
+        SimpleAttributeSet atributos = new SimpleAttributeSet();
+        StyleConstants.setForeground(atributos, c);
+        textPane.setCharacterAttributes(atributos, false);
     }
 }
