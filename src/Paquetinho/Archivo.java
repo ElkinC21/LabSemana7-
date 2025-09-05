@@ -10,7 +10,8 @@ public class Archivo {
 
     private File archivo;
 
-    public Archivo() { }
+    public Archivo() {
+    }
 
     public void crearArchivo(String nombre) throws IOException {
         this.archivo = new File(asegurarExtensionDocx(nombre));
@@ -58,14 +59,24 @@ public class Archivo {
     }
 
     private void ArchivoLeer() throws IOException {
-        if (archivo == null) throw new IllegalStateException("No hay archivo seleccionado");
-        if (!archivo.exists()) throw new IOException("El archivo no existe: " + archivo.getAbsolutePath());
-        if (!archivo.isFile()) throw new IOException("La ruta no es un archivo valido");
-        if (!archivo.canRead()) throw new IOException("No se puede leer el archivo");
+        if (archivo == null) {
+            throw new IllegalStateException("No hay archivo seleccionado");
+        }
+        if (!archivo.exists()) {
+            throw new IOException("El archivo no existe: " + archivo.getAbsolutePath());
+        }
+        if (!archivo.isFile()) {
+            throw new IOException("La ruta no es un archivo valido");
+        }
+        if (!archivo.canRead()) {
+            throw new IOException("No se puede leer el archivo");
+        }
     }
 
     private void ArchivoEscribir() throws IOException {
-        if (archivo == null) throw new IllegalStateException("No hay archivo seleccionado");
+        if (archivo == null) {
+            throw new IllegalStateException("No hay archivo seleccionado");
+        }
         if (archivo.exists() && !archivo.canWrite()) {
             throw new IOException("No se puede escribir en el archivo");
         }

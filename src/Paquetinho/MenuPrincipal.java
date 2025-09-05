@@ -14,22 +14,26 @@ public class MenuPrincipal extends BaseFrame {
 
     public MenuPrincipal() {
         super("Menu Principal", 500, 300);
+        initComponents();
+        setVisible(true);
     }
 
-    @Override
     public void initComponents() {
         JPanel panel = new JPanel(null);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        btnNuevo = crearBoton("Nuevo archivo", 150, 60, 200, 45);
+        btnNuevo = new JButton("Nuevo archivo");
+        btnNuevo.setBounds(150, 60, 200, 45);
         estilizarBoton(btnNuevo);
         panel.add(btnNuevo);
 
-        btnAbrir = crearBoton("Abrir archivo", 150, 120, 200, 45);
+        btnAbrir = new JButton("Abrir archivo");
+        btnAbrir.setBounds(150, 120, 200, 45);
         estilizarBoton(btnAbrir);
         panel.add(btnAbrir);
 
-        btnSalir = crearBoton("Salir", 150, 180, 200, 45);
+        btnSalir = new JButton("Salir");
+        btnSalir.setBounds(150, 180, 200, 45);
         estilizarBoton(btnSalir);
         btnSalir.setBackground(new Color(220, 80, 80));
         btnSalir.setForeground(Color.WHITE);
@@ -37,7 +41,11 @@ public class MenuPrincipal extends BaseFrame {
 
         setContentPane(panel);
 
-        btnNuevo.addActionListener(e -> abrirEditorVacio());
+        btnNuevo.addActionListener(e -> {
+            setVisible(false);                        
+            new EditorGUI(this);                      
+        });
+
         btnAbrir.addActionListener(e -> abrirDocxEnEditor());
         btnSalir.addActionListener(e -> System.exit(0));
     }
@@ -54,21 +62,19 @@ public class MenuPrincipal extends BaseFrame {
         boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
-    private void abrirEditorVacio() {
-        new EditorGUI().setVisible(true);
-    }
-
     private void abrirDocxEnEditor() {
         JFileChooser fc = new JFileChooser();
         fc.setDialogTitle("Abrir .docx");
         fc.setFileFilter(new FileNameExtensionFilter("Documento Word (*.docx)", "docx"));
         int r = fc.showOpenDialog(this);
         if (r != JFileChooser.APPROVE_OPTION) return;
+
         File f = fc.getSelectedFile();
-        new EditorGUI().setVisible(true);
+        setVisible(false);                             
+        new EditorGUI(this, f);                        
     }
 
     public static void main(String[] args) {
-        new MenuPrincipal().setVisible(true);
+        new MenuPrincipal();
     }
 }

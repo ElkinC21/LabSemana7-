@@ -1,149 +1,278 @@
 package Paquetinho;
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextPane;
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
-import java.awt.Color;
-import java.io.File;
-import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.*;
+import javax.swing.text.StyledEditorKit;
 
-public class Wordimportar {
+public final class Wordimportar {
 
-    public static void cargar(JTextPane areaTexto, File archivo) throws Exception {
-        try (ZipFile zip = new ZipFile(archivo)) {
-            ZipEntry entrada = buscarEntrada(zip, "word/document.xml");
-            if (entrada == null) throw new IllegalArgumentException("No se encontro word/document.xml");
-            try (InputStream entradaStream = zip.getInputStream(entrada)) {
-                Document xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(entradaStream);
-                xml.getDocumentElement().normalize();
-                StyledDocument docSwing = areaTexto.getStyledDocument();
-                docSwing.remove(0, docSwing.getLength());
-                NodeList listaParrafos = xml.getElementsByTagNameNS("*", "p");
-                for (int i = 0; i < listaParrafos.getLength(); i++) {
-                    Element parrafo = (Element) listaParrafos.item(i);
-                    NodeList listaRuns = parrafo.getElementsByTagNameNS("*", "r");
-                    for (int j = 0; j < listaRuns.getLength(); j++) {
-                        Element run = (Element) listaRuns.item(j);
-                        SimpleAttributeSet atributos = obtenerAtributos(run);
-                        String texto = obtenerTexto(run);
-                        if (!texto.isEmpty()) docSwing.insertString(docSwing.getLength(), texto, atributos);
-                    }
-                    if (i < listaParrafos.getLength() - 1) docSwing.insertString(docSwing.getLength(), "\n", null);
-                }
-                areaTexto.setCaretPosition(0);
+    private Wordimportar() {}
+
+    public static void cargar(JTextPane destino, File archivoDocx) throws IOException, BadLocationException {
+        if (destino == null) throw new IllegalArgumentException("destino == null");
+        if (archivoDocx == null) throw new IllegalArgumentException("docx == null");
+        if (!archivoDocx.isFile()) throw new IOException("Archivo invalido: " + archivoDocx.getAbsolutePath());
+
+        if (!(destino.getEditorKit() instanceof StyledEditorKit)) {
+            destino.setEditorKit(new StyledEditorKit());
+        }
+
+        StyledDocument documento = destino.getStyledDocument();
+        documento.remove(0, documento.getLength());
+
+        String xmlDocumento = leerDocumentXml(archivoDocx);
+        xmlDocumento = xmlDocumento.replace("</w:p>", "</w:p>\n");
+
+        Pattern patronBloque = Pattern.compile("(<w:p[\\s\\S]*?</w:p>)|(<w:tbl[\\s\\S]*?</w:tbl>)");
+        Matcher buscadorBloque = patronBloque.matcher(xmlDocumento);
+
+        while (buscadorBloque.find()) {
+            String bloque = buscadorBloque.group();
+
+            if (bloque.startsWith("<w:p")) {
+                procesarParrafoComoTexto(bloque, documento);
+                documento.insertString(documento.getLength(), "\n", null);
+            } else if (bloque.startsWith("<w:tbl")) {
+                insertarTablaDesdeXml(destino, documento, bloque);
             }
-        } catch (Exception e) {
-            throw e;
+        }
+
+        destino.setCaretPosition(0);
+    }
+
+    private static void procesarParrafoComoTexto(String bloqueParrafo, StyledDocument documento) throws BadLocationException {
+        Matcher buscadorRun = Pattern.compile("<w:r[\\s\\S]*?</w:r>").matcher(bloqueParrafo);
+        while (buscadorRun.find()) {
+            String bloqueRun = buscadorRun.group();
+
+            String bloquePropiedadesRun = extraerPrimero(bloqueRun, "<w:rPr[\\s\\S]*?</w:rPr>");
+            SimpleAttributeSet atributos = construirAtributosDesdeRPr(bloquePropiedadesRun);
+
+            Matcher mTexto = Pattern.compile("<w:t[^>]*>([\\s\\S]*?)</w:t>").matcher(bloqueRun);
+            boolean emitio = false;
+            while (mTexto.find()) {
+                String texto = quitarXml(mTexto.group(1));
+                if (!texto.isEmpty()) {
+                    documento.insertString(documento.getLength(), texto, atributos);
+                    emitio = true;
+                }
+            }
+
+            if (!emitio && contieneEtiqueta(bloqueRun, "<w:br\\b")) {
+                documento.insertString(documento.getLength(), "\n", atributos);
+            }
+
+            Matcher mInstr = Pattern.compile("<w:instrText[^>]*>([\\s\\S]*?)</w:instrText>").matcher(bloqueRun);
+            while (mInstr.find()) {
+                String texto = quitarXml(mInstr.group(1));
+                if (!texto.isEmpty()) documento.insertString(documento.getLength(), texto, atributos);
+            }
         }
     }
 
-    private static ZipEntry buscarEntrada(ZipFile zip, String ruta) {
-        Enumeration<? extends ZipEntry> entradas = zip.entries();
-        while (entradas.hasMoreElements()) {
-            ZipEntry z = entradas.nextElement();
-            if (!z.isDirectory() && z.getName().equals(ruta)) return z;
-        }
-        return null;
-    }
-
-    private static String obtenerTexto(Element run) {
-        StringBuilder sb = new StringBuilder();
-        NodeList listaTexto = run.getElementsByTagNameNS("*", "t");
-        for (int k = 0; k < listaTexto.getLength(); k++) {
-            Node nodo = listaTexto.item(k);
-            if (nodo != null && nodo.getTextContent() != null) sb.append(nodo.getTextContent());
-        }
-        return sb.toString();
-    }
-
-    private static SimpleAttributeSet obtenerAtributos(Element run) {
+    private static SimpleAttributeSet construirAtributosDesdeRPr(String bloqueRPr) {
         SimpleAttributeSet atributos = new SimpleAttributeSet();
-        Element propiedades = hijoNS(run, "*", "rPr");
-        String fuente = null;
-        Integer tamano = null;
-        Color color = null;
-        boolean negrita = false;
-        boolean cursiva = false;
-        boolean subrayado = false;
-        if (propiedades != null) {
-            Element nodoFuente = hijoNS(propiedades, "*", "rFonts");
-            if (nodoFuente != null) fuente = primeroNoVacio(
-                    nodoFuente.getAttribute("w:ascii"),
-                    nodoFuente.getAttribute("ascii"),
-                    nodoFuente.getAttribute("w:hAnsi"),
-                    nodoFuente.getAttribute("hAnsi")
-            );
-            Element nodoTamano = hijoNS(propiedades, "*", "sz");
-            if (nodoTamano != null) {
-                String valor = primeroNoVacio(nodoTamano.getAttribute("w:val"), nodoTamano.getAttribute("val"));
-                if (valor != null && !valor.isBlank()) {
-                    try {
-                        int halfPts = Integer.parseInt(valor);
-                        if (halfPts > 0) tamano = halfPts / 2;
-                    } catch (NumberFormatException ignored) {}
-                }
-            }
-            Element nodoColor = hijoNS(propiedades, "*", "color");
-            if (nodoColor != null) {
-                String valor = primeroNoVacio(nodoColor.getAttribute("w:val"), nodoColor.getAttribute("val"));
-                Color c = convertirHexColor(valor);
-                if (c != null) color = c;
-            }
-            if (hijoNS(propiedades, "*", "b") != null) negrita = true;
-            if (hijoNS(propiedades, "*", "i") != null) cursiva = true;
-            Element nodoSubrayado = hijoNS(propiedades, "*", "u");
-            if (nodoSubrayado != null) {
-                String valor = primeroNoVacio(nodoSubrayado.getAttribute("w:val"), nodoSubrayado.getAttribute("val"));
-                subrayado = valor == null || valor.isBlank() || !valor.equalsIgnoreCase("none");
-            }
+        if (bloqueRPr == null) return atributos;
+
+        String fuente = extraerAtributo(bloqueRPr, "<w:rFonts[^>]*?\\bw:ascii\\s*=\\s*\"([^\"]+)\"");
+        if (fuente == null) fuente = extraerAtributo(bloqueRPr, "<w:rFonts[^>]*?\\bw:hAnsi\\s*=\\s*\"([^\"]+)\"");
+        if (fuente != null && !fuente.isEmpty()) StyleConstants.setFontFamily(atributos, fuente);
+
+        String tam = extraerAtributo(bloqueRPr, "<w:sz[^>]*?\\bw:val\\s*=\\s*\"(\\d+)\"");
+        if (tam != null) {
+            try {
+                int halfPoints = Integer.parseInt(tam);
+                int puntos = Math.max(1, halfPoints / 2);
+                StyleConstants.setFontSize(atributos, puntos);
+            } catch (NumberFormatException ignored) {}
         }
-        if (fuente != null) StyleConstants.setFontFamily(atributos, fuente);
-        if (tamano != null && tamano > 0) StyleConstants.setFontSize(atributos, tamano);
-        if (color != null) StyleConstants.setForeground(atributos, color);
-        StyleConstants.setBold(atributos, negrita);
-        StyleConstants.setItalic(atributos, cursiva);
-        StyleConstants.setUnderline(atributos, subrayado);
+
+        String col = extraerAtributo(bloqueRPr, "<w:color[^>]*?\\bw:val\\s*=\\s*\"([0-9A-Fa-f]{3,8}|auto)\"");
+        if (col != null && !"auto".equalsIgnoreCase(col)) {
+            Color color = parsearColorHex(col);
+            if (color != null) StyleConstants.setForeground(atributos, color);
+        }
+
+        if (contieneEtiqueta(bloqueRPr, "<w:b\\b")) StyleConstants.setBold(atributos, true);
+        if (contieneEtiqueta(bloqueRPr, "<w:i\\b")) StyleConstants.setItalic(atributos, true);
+        if (contieneEtiqueta(bloqueRPr, "<w:u\\b")) StyleConstants.setUnderline(atributos, true);
+
         return atributos;
     }
 
-    private static Element hijoNS(Element padre, String ns, String local) {
-        NodeList lista = padre.getElementsByTagNameNS(ns, local);
-        for (int i = 0; i < lista.getLength(); i++) {
-            Node n = lista.item(i);
-            if (n instanceof Element && n.getParentNode() == padre) return (Element) n;
+    private static void insertarTablaDesdeXml(JTextPane destino, StyledDocument documento, String xmlTabla) {
+        ArrayList<ArrayList<String>> filas = new ArrayList<>();
+
+        Matcher buscadorTr = Pattern.compile("<w:tr[\\s\\S]*?</w:tr>").matcher(xmlTabla);
+        while (buscadorTr.find()) {
+            String bloqueFila = buscadorTr.group();
+            ArrayList<String> celdas = new ArrayList<>();
+
+            Matcher buscadorTc = Pattern.compile("<w:tc[\\s\\S]*?</w:tc>").matcher(bloqueFila);
+            while (buscadorTc.find()) {
+                String bloqueCelda = buscadorTc.group();
+                String textoCelda = extraerTextoDeCelda(bloqueCelda);
+                celdas.add(textoCelda);
+            }
+
+            if (!celdas.isEmpty()) filas.add(celdas);
         }
-        return null;
-    }
 
-    private static String primeroNoVacio(String... valores) {
-        for (String v : valores) if (v != null && !v.isBlank()) return v;
-        return null;
-    }
+        if (filas.isEmpty()) return;
 
-    private static Color convertirHexColor(String v) {
+        int columnas = 0;
+        for (ArrayList<String> fila : filas) columnas = Math.max(columnas, fila.size());
+        int totalFilas = filas.size();
+
+        DefaultTableModel modeloTabla = new DefaultTableModel(totalFilas, columnas);
+        JTable tabla = new JTable(modeloTabla);
+        tabla.setRowHeight(24);
+        tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
+        int anchoColumna = 120;
+        for (int c = 0; c < columnas; c++) tabla.getColumnModel().getColumn(c).setPreferredWidth(anchoColumna);
+
+        for (int r = 0; r < totalFilas; r++) {
+            ArrayList<String> fila = filas.get(r);
+            for (int c = 0; c < fila.size(); c++) {
+                modeloTabla.setValueAt(fila.get(c), r, c);
+            }
+        }
+
+        int altoEncabezado = tabla.getTableHeader().getPreferredSize().height;
+        int anchoPreferido = columnas * anchoColumna;
+        int altoPreferido = altoEncabezado + totalFilas * tabla.getRowHeight() + 2;
+
+        JScrollPane panelConScroll = new JScrollPane(tabla);
+        panelConScroll.setPreferredSize(new Dimension(anchoPreferido, altoPreferido));
+        panelConScroll.setBorder(new LineBorder(new Color(160, 160, 160)));
+
         try {
-            if (v == null || v.isBlank()) return null;
-            String h = v.startsWith("#") ? v.substring(1) : v;
+            int posicion = documento.getLength();
+            documento.insertString(posicion, "\n", null);
+            posicion++;
+
+            SimpleAttributeSet atributosComponente = new SimpleAttributeSet();
+            StyleConstants.setComponent(atributosComponente, panelConScroll);
+            documento.insertString(posicion, " ", atributosComponente);
+            posicion++;
+
+            documento.insertString(posicion, "\n", null);
+        } catch (Exception ignored) {}
+    }
+
+    
+    private static String extraerTextoDeCelda(String bloqueCelda) {
+        StringBuilder acumulado = new StringBuilder();
+
+       
+        Matcher mT = Pattern.compile("<w:t[^>]*>([\\s\\S]*?)</w:t>").matcher(bloqueCelda);
+        while (mT.find()) {
+            if (acumulado.length() > 0) acumulado.append("\n");
+            acumulado.append(quitarXml(mT.group(1)));
+        }
+
+        
+        Matcher mInstr = Pattern.compile("<w:instrText[^>]*>([\\s\\S]*?)</w:instrText>").matcher(bloqueCelda);
+        while (mInstr.find()) {
+            if (acumulado.length() > 0) acumulado.append("\n");
+            acumulado.append(quitarXml(mInstr.group(1)));
+        }
+
+        
+        Matcher mDel = Pattern.compile("<w:delText[^>]*>([\\s\\S]*?)</w:delText>").matcher(bloqueCelda);
+        while (mDel.find()) {
+            if (acumulado.length() > 0) acumulado.append("\n");
+            acumulado.append(quitarXml(mDel.group(1)));
+        }
+
+        String resultado = acumulado.toString().trim();
+
+        
+        if (resultado.contains("<w:") || resultado.matches(".*<[^>]+>.*")) {
+           
+            String limpio = resultado.replaceAll("<[^>]+>", "");
+           
+            limpio = quitarXml(limpio).trim();
+            resultado = limpio;
+        }
+
+       
+        if (resultado.isEmpty()) {
+            String sinTags = bloqueCelda.replaceAll("<[^>]+>", "");
+            sinTags = quitarXml(sinTags).trim();
+            return sinTags;
+        }
+
+        return resultado;
+    }
+
+    private static String leerDocumentXml(File archivoDocx) throws IOException {
+        try (ZipFile zip = new ZipFile(archivoDocx)) {
+            ZipEntry entry = zip.getEntry("word/document.xml");
+            if (entry == null) throw new IOException("word/document.xml no encontrado en el .docx");
+            return new String(zip.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private static String extraerPrimero(String fuente, String regex) {
+        if (fuente == null) return null;
+        Matcher m = Pattern.compile(regex).matcher(fuente);
+        return m.find() ? m.group() : null;
+    }
+
+    private static String extraerAtributo(String fuente, String regex) {
+        Matcher m = Pattern.compile(regex).matcher(fuente);
+        return m.find() ? m.group(1) : null;
+    }
+
+    private static boolean contieneEtiqueta(String fuente, String regex) {
+        return Pattern.compile(regex).matcher(fuente).find();
+    }
+
+    private static Color parsearColorHex(String hex) {
+        try {
+            String h = hex.trim();
+            if (h.length() == 3) {
+                h = "" + h.charAt(0) + h.charAt(0)
+                   + h.charAt(1) + h.charAt(1)
+                   + h.charAt(2) + h.charAt(2);
+            }
             if (h.length() == 6) {
-                int r = Integer.parseInt(h.substring(0,2),16);
-                int g = Integer.parseInt(h.substring(2,4),16);
-                int b = Integer.parseInt(h.substring(4,6),16);
-                return new Color(r,g,b);
+                int rgb = Integer.parseInt(h, 16);
+                return new Color(rgb);
             }
             if (h.length() == 8) {
-                int r = Integer.parseInt(h.substring(2,4),16);
-                int g = Integer.parseInt(h.substring(4,6),16);
-                int b = Integer.parseInt(h.substring(6,8),16);
-                return new Color(r,g,b);
+                long argb = Long.parseLong(h, 16);
+                return new Color((int)(argb & 0xFFFFFF));
             }
         } catch (Exception ignored) {}
         return null;
+    }
+
+    private static String quitarXml(String texto) {
+        return texto.replace("&lt;", "<")
+                    .replace("&gt;", ">")
+                    .replace("&amp;", "&")
+                    .replace("&quot;", "\"")
+                    .replace("&apos;", "'");
     }
 }
 

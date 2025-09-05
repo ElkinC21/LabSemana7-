@@ -15,7 +15,7 @@ public class EditorControl {
     private final JTextPane editor;
     private final Archivo archivo;
     private String fuente = "Arial";
-    private int tamano = 16;
+    private int tamanio = 16;
     private Color color = Color.BLACK;
 
     public EditorControl(JTextPane editor, Archivo archivo) {
@@ -25,29 +25,35 @@ public class EditorControl {
     }
 
     public void setFuente(String fuente) {
-        if (fuente != null && !fuente.isBlank()) this.fuente = fuente;
+        if (fuente != null && !fuente.isBlank()) {
+            this.fuente = fuente;
+        }
     }
 
-    public void setTamano(int tamano) {
-        if (tamano > 0) this.tamano = tamano;
+    public void setTamano(int tamanio) {
+        if (tamanio > 0) {
+            this.tamanio = tamanio;
+        }
     }
 
     public void setColor(Color color) {
-        if (color != null) this.color = color;
+        if (color != null) {
+            this.color = color;
+        }
     }
 
-    public void aplicar(boolean negrita, boolean cursiva, boolean subrayado) {
-        int start = editor.getSelectionStart();
-        int end = editor.getSelectionEnd();
-        if (start == end) return;
+    public void aplicar() {
+        int inicio = editor.getSelectionStart();
+        int fin = editor.getSelectionEnd();
+        if (inicio == fin) {
+            return;
+        }
         SimpleAttributeSet attrs = new SimpleAttributeSet();
         StyleConstants.setFontFamily(attrs, fuente);
-        StyleConstants.setFontSize(attrs, tamano);
+        StyleConstants.setFontSize(attrs, tamanio);
         StyleConstants.setForeground(attrs, color);
-        StyleConstants.setBold(attrs, negrita);
-        StyleConstants.setItalic(attrs, cursiva);
-        StyleConstants.setUnderline(attrs, subrayado);
-        editor.getStyledDocument().setCharacterAttributes(start, end - start, attrs, false);
+        
+        editor.getStyledDocument().setCharacterAttributes(inicio, fin - inicio, attrs, false);
     }
 
     public void abrir() throws IOException {

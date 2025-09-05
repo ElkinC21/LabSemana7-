@@ -14,11 +14,7 @@ public abstract class BaseFrame extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(width, height);
         setLocationRelativeTo(null);
-        initComponents();
-        setVisible(true);
     }
-
-    abstract void initComponents();
 
     protected JLabel crearLabel(String texto, int x, int y, int ancho, int alto, int estilo, float tamaño) {
         JLabel label = new JLabel(texto);
