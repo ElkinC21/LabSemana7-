@@ -1,18 +1,20 @@
 package Paquetinho;
 
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import static java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment;
 import javax.swing.JButton;
-import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
+import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.border.EmptyBorder;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
@@ -23,12 +25,12 @@ public class EditorGUI extends BaseFrame {
     private JPanel panelNorte;
     private JPanel panelCentro;
 
-    private JComboBox<String> fontBox;
-    private JComboBox<String> tamBox;
+    private JComboBox<String> cboFuentes;
+    private JComboBox<String> cboTamanios;
     private JButton btnColor;
 
-    private JTextPane textPane;
-    private StyledDocument doc;
+    private JTextPane areaTexto;
+    private StyledDocument documento;
 
     public EditorGUI() {
         super("Editor de texto", 800, 700);
@@ -36,113 +38,109 @@ public class EditorGUI extends BaseFrame {
 
     @Override
     public void initComponents() {
-        //panel principal
         panelPrincipal = new JPanel(new BorderLayout());
 
-        //resto de paneles
         panelNorte = new JPanel(null);
         panelNorte.setPreferredSize(new Dimension(0, 60));
         panelPrincipal.add(panelNorte, BorderLayout.NORTH);
 
-        // Fuente
-        fontBox = crearCboFuentes();
-
-        JLabel lblFuente = crearLabel("Fuente:", 10, 15, 60, 25, java.awt.Font.PLAIN, 14f);
+        JLabel lblFuente = new JLabel("Fuente:");
+        lblFuente.setBounds(10, 15, 60, 28);
         panelNorte.add(lblFuente);
-        panelNorte.add(fontBox);
 
-        btnColor = crearBoton("Color", 400, 10, 80, 30);
+        cboFuentes = crearComboFuentes();
+        cboFuentes.setBounds(70, 15, 200, 28);
+        panelNorte.add(cboFuentes);
+
+        JLabel lblTamanio = new JLabel("Tamaño:");
+        lblTamanio.setBounds(285, 15, 60, 28);
+        panelNorte.add(lblTamanio);
+
+        cboTamanios = crearComboTamanios();
+        cboTamanios.setBounds(345, 15, 70, 28);
+        panelNorte.add(cboTamanios);
+
+        btnColor = new JButton("Color");
+        btnColor.setBounds(430, 15, 80, 28);
         btnColor.addActionListener(e -> {
-            JColorChooser chooser = new JColorChooser(textPane.getForeground());
-            chooser.setPreviewPanel(new JPanel());
+            JColorChooser selectorColor = new JColorChooser(areaTexto.getForeground());
+            selectorColor.setPreviewPanel(new JPanel());
 
-            JDialog dialog = JColorChooser.createDialog(this, "Elegir color", true, chooser,
-                    actionEvent -> {
-                        Color c = chooser.getColor();
-                        if (c != null) {
-                            aplicarColor(c);
-                        }
+            JDialog dialogColor = JColorChooser.createDialog(
+                    this, "Elegir color", true, selectorColor,
+                    eventoAceptar -> {
+                        Color colorElegido = selectorColor.getColor();
+                        if (colorElegido != null) aplicarColor(colorElegido);
                     },
                     null
             );
-            dialog.setVisible(true);
+            dialogColor.setVisible(true);
         });
-
+        
         panelNorte.add(btnColor);
-
-        // Tamaño
-        tamBox = crearCboTamanios();
-
-        JLabel lblTam = crearLabel("Tamaño:", 265, 15, 60, 25, java.awt.Font.PLAIN, 14f);
-        panelNorte.add(lblTam);
-
-        tamBox.setBounds(325, 10, 50, 30);
-        panelNorte.add(tamBox);
 
         panelCentro = new JPanel(null);
         panelPrincipal.add(panelCentro, BorderLayout.CENTER);
 
-        textPane = new JTextPane();
-        doc = textPane.getStyledDocument();
+        areaTexto = new JTextPane();
+        documento = areaTexto.getStyledDocument();
 
-        JScrollPane scroll = new JScrollPane(textPane);
-        scroll.setBounds(20, 20, 720, 550);
+        JScrollPane scroll = new JScrollPane(areaTexto);
+        scroll.setBorder(new EmptyBorder(10, 10, 10, 10));
+        scroll.setBounds(20, 20, 740, 580);
         panelCentro.add(scroll);
 
         setContentPane(panelPrincipal);
     }
 
-    private JComboBox<String> crearCboFuentes() {
-        String families[] = getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-
-        JComboBox<String> box = new JComboBox<>(families);
-        box.setMaximumRowCount(10);
-        box.setBounds(70, 10, 180, 30);
-        box.addActionListener(e -> {
-            String family = (String) box.getSelectedItem();
-            aplicarFuente(family);
+    private JComboBox<String> crearComboFuentes() {
+        String[] familias = getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+        JComboBox<String> combo = new JComboBox<>(familias);
+        combo.setMaximumRowCount(12);
+        combo.addActionListener(e -> {
+            String familiaSeleccionada = (String) combo.getSelectedItem();
+            if (familiaSeleccionada != null) aplicarFuente(familiaSeleccionada);
         });
-        return box;
+        return combo;
     }
 
-    private JComboBox<String> crearCboTamanios() {
-        String tamanios[] = {"8", "10", "12", "14", "16", "18", "20", "24", "28", "32", "36", "48", "72"};
-        JComboBox<String> box = new JComboBox<>(tamanios);
-        box.setEditable(true);
-
-        box.addActionListener(e -> {
-            Object sel = box.getSelectedItem();
-            if (sel != null) {
+    private JComboBox<String> crearComboTamanios() {
+        String[] tamanios = {"8","10","12","14","16","18","20","24","28","32","36","48","72"};
+        JComboBox<String> combo = new JComboBox<>(tamanios);
+        combo.setEditable(true);
+        combo.addActionListener(e -> {
+            Object seleccion = combo.getSelectedItem();
+            if (seleccion != null) {
                 try {
-                    int size = Integer.parseInt(sel.toString().trim());
-                    aplicarTamanio(size);
+                    int tamanio = Integer.parseInt(seleccion.toString().trim());
+                    aplicarTamanio(tamanio);
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(this, "Error: ingrese un número entero válido.");
                 }
             }
         });
-        return box;
+        return combo;
     }
 
-    private void aplicarTamanio(int size) {
-        SimpleAttributeSet atributos = new SimpleAttributeSet();
-        StyleConstants.setFontSize(atributos, size);
-        textPane.setCharacterAttributes(atributos, false);
+    private void aplicarFuente(String familia) {
+        SimpleAttributeSet attrs = new SimpleAttributeSet();
+        StyleConstants.setFontFamily(attrs, familia);
+        areaTexto.setCharacterAttributes(attrs, false);
     }
 
-    private void aplicarFuente(String family) {
-        SimpleAttributeSet atributos = new SimpleAttributeSet();
-        StyleConstants.setFontFamily(atributos, family);
-        textPane.setCharacterAttributes(atributos, false);
+    private void aplicarTamanio(int tamanio) {
+        SimpleAttributeSet attrs = new SimpleAttributeSet();
+        StyleConstants.setFontSize(attrs, tamanio);
+        areaTexto.setCharacterAttributes(attrs, false);
+    }
+
+    private void aplicarColor(Color color) {
+        SimpleAttributeSet attrs = new SimpleAttributeSet();
+        StyleConstants.setForeground(attrs, color);
+        areaTexto.setCharacterAttributes(attrs, false);
     }
 
     public static void main(String[] args) {
         new EditorGUI().setVisible(true);
-    }
-
-    private void aplicarColor(Color c) {
-        SimpleAttributeSet atributos = new SimpleAttributeSet();
-        StyleConstants.setForeground(atributos, c);
-        textPane.setCharacterAttributes(atributos, false);
     }
 }
