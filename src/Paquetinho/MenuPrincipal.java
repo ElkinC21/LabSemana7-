@@ -16,28 +16,24 @@ public class MenuPrincipal extends BaseFrame {
 
     @Override
     public void initComponents() {
-        // Panel principal con layout nulo
+
         JPanel panel = new JPanel(null) {
         };
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Título
         JLabel lblTitulo = crearLabel("Editor de Texto", 100, 20, 300, 40, Font.BOLD, 26f);
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
         lblTitulo.setForeground(new Color(40, 40, 90));
         panel.add(lblTitulo);
 
-        // Botón Nuevo
         btnNuevo = crearBoton("Nuevo archivo", 150, 90, 200, 45);
         estilizarBoton(btnNuevo);
         panel.add(btnNuevo);
 
-        // Botón Abrir
         btnAbrir = crearBoton("Abrir archivo", 150, 150, 200, 45);
         estilizarBoton(btnAbrir);
         panel.add(btnAbrir);
 
-        // Botón Salir
         btnSalir = crearBoton("Salir", 150, 210, 200, 45);
         estilizarBoton(btnSalir);
         btnSalir.setBackground(new Color(220, 80, 80));
@@ -47,7 +43,6 @@ public class MenuPrincipal extends BaseFrame {
         setContentPane(panel);
     }
 
-    // Método para estilizar botones con un look moderno
     private void estilizarBoton(JButton boton) {
         boton.setFocusPainted(false);
         boton.setFont(new Font("Segoe UI", Font.PLAIN, 15));
