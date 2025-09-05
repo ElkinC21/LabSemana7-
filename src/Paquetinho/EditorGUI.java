@@ -1,3 +1,4 @@
+
 package Paquetinho;
 
 import java.awt.BorderLayout;
@@ -14,11 +15,9 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
@@ -32,14 +31,12 @@ public class EditorGUI extends BaseFrame {
     private JComboBox<String> cboFuentes;
     private JComboBox<String> cboTamanios;
     private JButton btnColor;
-    private JButton btnInsertarTabla;
 
     private JButton btnGuardar;
     private JButton btnRegresar;
 
     private JTextPane areaTexto;
 
-    private JTable ultimaTablaInsertada; // referencia a la última tabla creada
     private final Archivo archivo = new Archivo();
 
     public EditorGUI() {
@@ -63,7 +60,7 @@ public class EditorGUI extends BaseFrame {
         cboFuentes.setBounds(70, 15, 200, 28);
         panelNorte.add(cboFuentes);
 
-        JLabel lblTamanio = new JLabel("Tamaño:");
+        JLabel lblTamanio = new JLabel("Tamano:");
         lblTamanio.setBounds(285, 15, 60, 28);
         panelNorte.add(lblTamanio);
 
@@ -88,21 +85,11 @@ public class EditorGUI extends BaseFrame {
             );
             dialogColor.setVisible(true);
         });
-        panelNorte.add(btnColor);
 
-        // 🔹 Botón Insertar Tabla
-        btnInsertarTabla = new JButton("Insertar Tabla");
-        btnInsertarTabla.setBounds(520, 15, 120, 28);
-        btnInsertarTabla.addActionListener(e -> {
-            try {
-                int filas = Integer.parseInt(JOptionPane.showInputDialog(this, "Número de filas:"));
-                int cols = Integer.parseInt(JOptionPane.showInputDialog(this, "Número de columnas:"));
-                insertarTabla(filas, cols);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Entrada inválida.");
-            }
-        });
-        panelNorte.add(btnInsertarTabla);
+
+
+
+        panelNorte.add(btnColor);
 
         panelCentro = new JPanel(null);
         panelPrincipal.add(panelCentro, BorderLayout.CENTER);
@@ -122,7 +109,7 @@ public class EditorGUI extends BaseFrame {
         panelPrincipal.add(panelSur, BorderLayout.SOUTH);
 
         btnGuardar.addActionListener(e -> guardarDocxConChooser());
-        // btnRegresar sin lógica
+        // btnRegresar sin logica
     }
 
     private JComboBox<String> crearComboFuentes() {
@@ -149,7 +136,7 @@ public class EditorGUI extends BaseFrame {
                     int tamanio = Integer.parseInt(seleccion.toString().trim());
                     aplicarTamanio(tamanio);
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Error: ingrese un número entero válido.");
+                    JOptionPane.showMessageDialog(this, "Error: ingrese un numero entero valido.");
                 }
             }
         });
@@ -174,24 +161,6 @@ public class EditorGUI extends BaseFrame {
         areaTexto.setCharacterAttributes(attrs, false);
     }
 
-    // 🔹 Insertar tabla en el JTextPane
-    private void insertarTabla(int filas, int columnas) {
-        JTable tabla = new JTable(new DefaultTableModel(filas, columnas));
-        tabla.setRowHeight(25);
-        tabla.setGridColor(Color.BLACK);
-
-        JScrollPane scrollTabla = new JScrollPane(tabla);
-        scrollTabla.setPreferredSize(new java.awt.Dimension(columnas * 80, filas * 30));
-
-        try {
-            areaTexto.insertComponent(scrollTabla);
-            ultimaTablaInsertada = tabla; // guardamos referencia
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al insertar tabla: " + e.getMessage());
-        }
-    }
-
-    // 🔹 Guardar documento (texto + tablas incrustadas) en DOCX/RTF
     private void guardarDocxConChooser() {
         JFileChooser fc = new JFileChooser();
         fc.setDialogTitle("Guardar como");
@@ -206,7 +175,7 @@ public class EditorGUI extends BaseFrame {
         try {
             archivo.crearArchivo(ruta);
             Wordexportar.guardar(areaTexto, new File(ruta));
-            JOptionPane.showMessageDialog(this, "Guardado con tablas incrustadas");
+            JOptionPane.showMessageDialog(this, "Guardado");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error al guardar: " + ex.getMessage());
         }

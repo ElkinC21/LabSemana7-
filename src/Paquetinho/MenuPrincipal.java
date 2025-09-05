@@ -1,8 +1,10 @@
 package Paquetinho;
 
 import java.awt.*;
+import java.io.File;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class MenuPrincipal extends BaseFrame {
 
@@ -11,36 +13,33 @@ public class MenuPrincipal extends BaseFrame {
     private JButton btnSalir;
 
     public MenuPrincipal() {
-        super("Menú Principal", 500, 350);
+        super("Menu Principal", 500, 300);
     }
 
     @Override
     public void initComponents() {
-
-        JPanel panel = new JPanel(null) {
-        };
+        JPanel panel = new JPanel(null);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JLabel lblTitulo = crearLabel("Editor de Texto", 100, 20, 300, 40, Font.BOLD, 26f);
-        lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
-        lblTitulo.setForeground(new Color(40, 40, 90));
-        panel.add(lblTitulo);
-
-        btnNuevo = crearBoton("Nuevo archivo", 150, 90, 200, 45);
+        btnNuevo = crearBoton("Nuevo archivo", 150, 60, 200, 45);
         estilizarBoton(btnNuevo);
         panel.add(btnNuevo);
 
-        btnAbrir = crearBoton("Abrir archivo", 150, 150, 200, 45);
+        btnAbrir = crearBoton("Abrir archivo", 150, 120, 200, 45);
         estilizarBoton(btnAbrir);
         panel.add(btnAbrir);
 
-        btnSalir = crearBoton("Salir", 150, 210, 200, 45);
+        btnSalir = crearBoton("Salir", 150, 180, 200, 45);
         estilizarBoton(btnSalir);
         btnSalir.setBackground(new Color(220, 80, 80));
         btnSalir.setForeground(Color.WHITE);
         panel.add(btnSalir);
 
         setContentPane(panel);
+
+        btnNuevo.addActionListener(e -> abrirEditorVacio());
+        btnAbrir.addActionListener(e -> abrirDocxEnEditor());
+        btnSalir.addActionListener(e -> System.exit(0));
     }
 
     private void estilizarBoton(JButton boton) {
@@ -53,7 +52,20 @@ public class MenuPrincipal extends BaseFrame {
                 new EmptyBorder(8, 15, 8, 15)
         ));
         boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    }
 
+    private void abrirEditorVacio() {
+        new EditorGUI().setVisible(true);
+    }
+
+    private void abrirDocxEnEditor() {
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Abrir .docx");
+        fc.setFileFilter(new FileNameExtensionFilter("Documento Word (*.docx)", "docx"));
+        int r = fc.showOpenDialog(this);
+        if (r != JFileChooser.APPROVE_OPTION) return;
+        File f = fc.getSelectedFile();
+        new EditorGUI().setVisible(true);
     }
 
     public static void main(String[] args) {
