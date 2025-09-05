@@ -3,8 +3,15 @@ package Paquetinho;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import static java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment;
-import javax.swing.*;
-import javax.swing.text.*;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextPane;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 public class EditorGUI extends BaseFrame {
 
