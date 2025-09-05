@@ -1,6 +1,7 @@
 package Paquetinho;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -37,4 +38,11 @@ public abstract class BaseFrame extends JFrame {
         boton.setBounds(x, y, ancho, alto);
         return boton;
     }
+
+    protected <T> JComboBox<T> crearComboBox(T items[], int x, int y, int ancho, int alto) {
+        JComboBox<T> combo = new JComboBox<>(items);
+        combo.setBounds(x, y, ancho, alto);
+        return combo;
+    }
+
 }

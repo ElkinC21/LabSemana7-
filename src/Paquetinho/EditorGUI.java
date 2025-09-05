@@ -2,7 +2,6 @@ package Paquetinho;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import static java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment;
 import javax.swing.*;
 import javax.swing.text.*;
@@ -13,8 +12,8 @@ public class EditorGUI extends BaseFrame {
     private JPanel panelNorte;
     private JPanel panelCentro;
 
-    private JToolBar toolBar;
     private JComboBox<String> fontBox;
+    private JComboBox<String> tamBox;
 
     private JTextPane textPane;
     private StyledDocument doc;
@@ -25,19 +24,29 @@ public class EditorGUI extends BaseFrame {
 
     @Override
     public void initComponents() {
+        //panel principal
         panelPrincipal = new JPanel(new BorderLayout());
 
-        panelNorte = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 10));
-        panelNorte.setPreferredSize(new Dimension(0, 56));
+        //resto de paneles
+        panelNorte = new JPanel(null);
+        panelNorte.setPreferredSize(new Dimension(0, 60));
         panelPrincipal.add(panelNorte, BorderLayout.NORTH);
 
-        toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-        panelNorte.add(toolBar);
-
+        // Fuente
         fontBox = crearCboFuentes();
-        toolBar.add(new JLabel("Fuente: "));
-        toolBar.add(fontBox);
+        
+        JLabel lblFuente = crearLabel("Fuente:", 10, 15, 60, 25, java.awt.Font.PLAIN, 14f);
+        panelNorte.add(lblFuente);
+        panelNorte.add(fontBox);
+
+        // Tamaño
+        tamBox = crearCboTamanios();
+        
+        JLabel lblTam = crearLabel("Tamaño:", 265, 15, 60, 25, java.awt.Font.PLAIN, 14f);
+        panelNorte.add(lblTam);
+        
+        tamBox.setBounds(325, 10, 50, 30);
+        panelNorte.add(tamBox);
 
         panelCentro = new JPanel(null);
         panelPrincipal.add(panelCentro, BorderLayout.CENTER);
@@ -57,11 +66,37 @@ public class EditorGUI extends BaseFrame {
 
         JComboBox<String> box = new JComboBox<>(families);
         box.setMaximumRowCount(10);
+        box.setBounds(70, 10, 180, 30);
         box.addActionListener(e -> {
             String family = (String) box.getSelectedItem();
-                aplicarFuente(family);
+            aplicarFuente(family);
         });
         return box;
+    }
+
+    private JComboBox<String> crearCboTamanios() {
+        String tamanios[] = {"8", "10", "12", "14", "16", "18", "20", "24", "28", "32", "36", "48", "72"};
+        JComboBox<String> box = new JComboBox<>(tamanios);
+        box.setEditable(true);
+
+        box.addActionListener(e -> {
+            Object sel = box.getSelectedItem();
+            if (sel != null) {
+                try {
+                    int size = Integer.parseInt(sel.toString().trim());
+                    aplicarTamanio(size);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Error: ingrese un número entero válido.");
+                }
+            }
+        });
+        return box;
+    }
+
+    private void aplicarTamanio(int size) {
+        SimpleAttributeSet atributos = new SimpleAttributeSet();
+        StyleConstants.setFontSize(atributos, size);
+        textPane.setCharacterAttributes(atributos, false);
     }
 
     private void aplicarFuente(String family) {
