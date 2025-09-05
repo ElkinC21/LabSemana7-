@@ -1,6 +1,5 @@
 package Paquetinho;
 
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -70,13 +69,15 @@ public class EditorGUI extends BaseFrame {
                     this, "Elegir color", true, selectorColor,
                     eventoAceptar -> {
                         Color colorElegido = selectorColor.getColor();
-                        if (colorElegido != null) aplicarColor(colorElegido);
+                        if (colorElegido != null) {
+                            aplicarColor(colorElegido);
+                        }
                     },
                     null
             );
             dialogColor.setVisible(true);
         });
-        
+
         panelNorte.add(btnColor);
 
         panelCentro = new JPanel(null);
@@ -99,13 +100,15 @@ public class EditorGUI extends BaseFrame {
         combo.setMaximumRowCount(12);
         combo.addActionListener(e -> {
             String familiaSeleccionada = (String) combo.getSelectedItem();
-            if (familiaSeleccionada != null) aplicarFuente(familiaSeleccionada);
+            if (familiaSeleccionada != null) {
+                aplicarFuente(familiaSeleccionada);
+            }
         });
         return combo;
     }
 
     private JComboBox<String> crearComboTamanios() {
-        String[] tamanios = {"8","10","12","14","16","18","20","24","28","32","36","48","72"};
+        String[] tamanios = {"8", "10", "12", "14", "16", "18", "20", "24", "28", "32", "36", "48", "72"};
         JComboBox<String> combo = new JComboBox<>(tamanios);
         combo.setEditable(true);
         combo.addActionListener(e -> {
