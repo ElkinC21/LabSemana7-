@@ -1,36 +1,42 @@
 package Paquetinho;
 
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import static java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment;
+import java.io.File;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JColorChooser;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
-import javax.swing.text.StyledDocument;
 
 public class EditorGUI extends BaseFrame {
 
     private JPanel panelPrincipal;
     private JPanel panelNorte;
     private JPanel panelCentro;
+    private JPanel panelSur;
 
     private JComboBox<String> cboFuentes;
     private JComboBox<String> cboTamanios;
     private JButton btnColor;
 
+    private JButton btnGuardar;
+    private JButton btnRegresar;
+
     private JTextPane areaTexto;
-    private StyledDocument documento;
+
+    private final Archivo archivo = new Archivo();
 
     public EditorGUI() {
         super("Editor de texto", 800, 700);
@@ -39,6 +45,7 @@ public class EditorGUI extends BaseFrame {
     @Override
     public void initComponents() {
         panelPrincipal = new JPanel(new BorderLayout());
+        setContentPane(panelPrincipal);
 
         panelNorte = new JPanel(null);
         panelNorte.setPreferredSize(new Dimension(0, 60));
@@ -52,7 +59,7 @@ public class EditorGUI extends BaseFrame {
         cboFuentes.setBounds(70, 15, 200, 28);
         panelNorte.add(cboFuentes);
 
-        JLabel lblTamanio = new JLabel("Tamaño:");
+        JLabel lblTamanio = new JLabel("Tamano:");
         lblTamanio.setBounds(285, 15, 60, 28);
         panelNorte.add(lblTamanio);
 
@@ -65,10 +72,9 @@ public class EditorGUI extends BaseFrame {
         btnColor.addActionListener(e -> {
             JColorChooser selectorColor = new JColorChooser(areaTexto.getForeground());
             selectorColor.setPreviewPanel(new JPanel());
-
             JDialog dialogColor = JColorChooser.createDialog(
                     this, "Elegir color", true, selectorColor,
-                    eventoAceptar -> {
+                    ev -> {
                         Color colorElegido = selectorColor.getColor();
                         if (colorElegido != null) aplicarColor(colorElegido);
                     },
@@ -76,21 +82,27 @@ public class EditorGUI extends BaseFrame {
             );
             dialogColor.setVisible(true);
         });
-        
         panelNorte.add(btnColor);
 
         panelCentro = new JPanel(null);
         panelPrincipal.add(panelCentro, BorderLayout.CENTER);
 
         areaTexto = new JTextPane();
-        documento = areaTexto.getStyledDocument();
 
         JScrollPane scroll = new JScrollPane(areaTexto);
         scroll.setBorder(new EmptyBorder(10, 10, 10, 10));
-        scroll.setBounds(20, 20, 740, 580);
+        scroll.setBounds(20, 20, 740, 520);
         panelCentro.add(scroll);
 
-        setContentPane(panelPrincipal);
+        panelSur = new JPanel();
+        btnGuardar = new JButton("Guardar DOCX");
+        btnRegresar = new JButton("Regresar");
+        panelSur.add(btnGuardar);
+        panelSur.add(btnRegresar);
+        panelPrincipal.add(panelSur, BorderLayout.SOUTH);
+
+        btnGuardar.addActionListener(e -> guardarDocxConChooser());
+        // btnRegresar sin logica
     }
 
     private JComboBox<String> crearComboFuentes() {
@@ -115,7 +127,7 @@ public class EditorGUI extends BaseFrame {
                     int tamanio = Integer.parseInt(seleccion.toString().trim());
                     aplicarTamanio(tamanio);
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Error: ingrese un número entero válido.");
+                    JOptionPane.showMessageDialog(this, "Error: ingrese un numero entero valido.");
                 }
             }
         });
@@ -138,6 +150,26 @@ public class EditorGUI extends BaseFrame {
         SimpleAttributeSet attrs = new SimpleAttributeSet();
         StyleConstants.setForeground(attrs, color);
         areaTexto.setCharacterAttributes(attrs, false);
+    }
+
+    private void guardarDocxConChooser() {
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Guardar como");
+        fc.setFileFilter(new FileNameExtensionFilter("Documento Word (*.docx)", "docx"));
+        int r = fc.showSaveDialog(this);
+        if (r != JFileChooser.APPROVE_OPTION) return;
+
+        File seleccionado = fc.getSelectedFile();
+        String ruta = seleccionado.getAbsolutePath();
+        if (!ruta.toLowerCase().endsWith(".docx")) ruta += ".docx";
+
+        try {
+            archivo.crearArchivo(ruta);
+            Wordexportar.guardar(areaTexto, new File(ruta));
+            JOptionPane.showMessageDialog(this, "Guardado");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error al guardar: " + ex.getMessage());
+        }
     }
 
     public static void main(String[] args) {

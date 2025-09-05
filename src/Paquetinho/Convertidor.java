@@ -17,7 +17,7 @@ public class Convertidor {
         }
     }
 
-    public static void rtfADocx(File rtfEntrada, File docxSalida) throws Exception {
+    public static void rtfADocx(File rtfEntrada, File docxSalida) throws Exception {                     
         JTextPane area = new JTextPane();
         area.setEditorKit(new RTFEditorKit());
         RTFEditorKit kit = (RTFEditorKit) area.getEditorKit();
