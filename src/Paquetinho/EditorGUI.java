@@ -1,4 +1,3 @@
-
 package Paquetinho;
 
 import java.awt.BorderLayout;
@@ -38,9 +37,15 @@ public class EditorGUI extends BaseFrame {
     private JTextPane areaTexto;
 
     private final Archivo archivo = new Archivo();
+    private File archivoActual = null;
 
     public EditorGUI() {
         super("Editor de texto", 800, 700);
+    }
+
+    public EditorGUI(File docxInicial) {
+        this();
+        cargarDocxInicial(docxInicial);
     }
 
     @Override
@@ -85,10 +90,6 @@ public class EditorGUI extends BaseFrame {
             );
             dialogColor.setVisible(true);
         });
-
-
-
-
         panelNorte.add(btnColor);
 
         panelCentro = new JPanel(null);
@@ -108,8 +109,7 @@ public class EditorGUI extends BaseFrame {
         panelSur.add(btnRegresar);
         panelPrincipal.add(panelSur, BorderLayout.SOUTH);
 
-        btnGuardar.addActionListener(e -> guardarDocxConChooser());
-        // btnRegresar sin logica
+        btnGuardar.addActionListener(e -> guardarDocx());
     }
 
     private JComboBox<String> crearComboFuentes() {
@@ -126,7 +126,7 @@ public class EditorGUI extends BaseFrame {
     }
 
     private JComboBox<String> crearComboTamanios() {
-        String[] tamanios = {"8", "10", "12", "14", "16", "18", "20", "24", "28", "32", "36", "48", "72"};
+        String[] tamanios = {"8","10","12","14","16","18","20","24","28","32","36","48","72"};
         JComboBox<String> combo = new JComboBox<>(tamanios);
         combo.setEditable(true);
         combo.addActionListener(e -> {
@@ -161,20 +161,34 @@ public class EditorGUI extends BaseFrame {
         areaTexto.setCharacterAttributes(attrs, false);
     }
 
-    private void guardarDocxConChooser() {
-        JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle("Guardar como");
-        fc.setFileFilter(new FileNameExtensionFilter("Documento Word (*.docx)", "docx"));
-        int r = fc.showSaveDialog(this);
-        if (r != JFileChooser.APPROVE_OPTION) return;
-
-        File seleccionado = fc.getSelectedFile();
-        String ruta = seleccionado.getAbsolutePath();
-        if (!ruta.toLowerCase().endsWith(".docx")) ruta += ".docx";
-
+    private void cargarDocxInicial(File docx) {
         try {
+            Wordimportar.cargar(areaTexto, docx);
+            archivoActual = docx;
+            archivo.setArchivo(docx.getAbsolutePath());
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error al abrir: " + ex.getMessage());
+        }
+    }
+
+    private void guardarDocx() {
+        try {
+            if (archivoActual != null) {
+                Wordexportar.guardar(areaTexto, archivoActual);
+                JOptionPane.showMessageDialog(this, "Guardado");
+                return;
+            }
+            JFileChooser fc = new JFileChooser();
+            fc.setDialogTitle("Guardar como");
+            fc.setFileFilter(new FileNameExtensionFilter("Documento Word (*.docx)", "docx"));
+            int r = fc.showSaveDialog(this);
+            if (r != JFileChooser.APPROVE_OPTION) return;
+            File seleccionado = fc.getSelectedFile();
+            String ruta = seleccionado.getAbsolutePath();
+            if (!ruta.toLowerCase().endsWith(".docx")) ruta += ".docx";
             archivo.crearArchivo(ruta);
-            Wordexportar.guardar(areaTexto, new File(ruta));
+            archivoActual = new File(ruta);
+            Wordexportar.guardar(areaTexto, archivoActual);
             JOptionPane.showMessageDialog(this, "Guardado");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error al guardar: " + ex.getMessage());
@@ -185,3 +199,4 @@ public class EditorGUI extends BaseFrame {
         new EditorGUI().setVisible(true);
     }
 }
+
